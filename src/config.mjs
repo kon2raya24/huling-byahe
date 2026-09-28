@@ -28,6 +28,15 @@ export const BOARD_TIME = 1.2;
 export const FARE = 12;
 export const CLEAN_BONUS = 5;
 export const NIGHT_BONUS = 10;
+// The arcade layer
+export const GAS_FACTOR = 1.4; // holding gas raises the target speed to this × cruise
+export const NEAR_DIST = 200; // a hazard this close ahead in your lane, then dodged, is a near miss
+export const COMBO_TIME = 6; // seconds a combo lasts without another near miss
+export const COMBO_MAX = 5; // highest barya multiplier
+export const SAKTO_WINDOW = 30; // a stop with the bumper this close to the sign is sakto
+export const SAKTO_BONUS = 3;
+export const DOG_SCARE = 2.5; // a honked dog crosses this much faster
+export const BARYA_GAP = 60; // spacing of coins in a trail
 
 export const NIGHT_CONFIG = {
   1: { cruise: 300, gapMin: 540, gapMax: 900, types: { tricycle: 3, manhole: 2 }, rain: false, fog: false },
@@ -40,7 +49,7 @@ export const NIGHT_CONFIG = {
 };
 
 export const UPGRADES = {
-  brakes: { name: 'Preno', label: 'Brakes', costs: [30, 60] },
-  bumper: { name: 'Bumper', label: 'Extra hit', costs: [40, 80] },
-  horn: { name: 'Busina', label: 'Horn cooldown', costs: [25, 50] },
+  brakes: { name: 'Preno', label: 'Brakes', costs: [60, 120] },
+  bumper: { name: 'Bumper', label: 'Extra hit', costs: [80, 160] },
+  horn: { name: 'Busina', label: 'Horn cooldown', costs: [50, 100] },
 };

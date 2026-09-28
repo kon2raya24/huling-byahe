@@ -4,7 +4,7 @@ import { autopilot } from './autopilot.mjs';
 import { createRenderer } from './render.mjs';
 import { createAudio } from './audio.mjs';
 import { NIGHTS, GHOSTS, FRAGMENTS, logbook, endingUnlocked, nightByNumber } from './story.mjs';
-import { applyRun, buyUpgrade, serialize, deserialize } from './save.mjs';
+import { applyRun, buyUpgrade, serialize, deserialize, starsFor } from './save.mjs';
 import { UPGRADES } from './config.mjs';
 
 const Q = new URLSearchParams(location.search);
@@ -53,8 +53,8 @@ function startNight(n) {
   $('intro-title').textContent = night.title;
   $('intro-sub').textContent = night.subtitle;
   $('intro-help').innerHTML = n === 1 || !save.seenIntro
-    ? 'Stop in the <b>curb lane</b> (bottom) at a glowing <b>PARA</b> sign to pick up a passenger, and at <b>BABA</b> to drop them off. Brake early: you have to be almost stopped.<br><kbd>↑</kbd><kbd>↓</kbd> lanes · hold <kbd>Space</kbd> brake · <kbd>H</kbd> horn moves tricycles'
-    : 'Reach the terminal before sunrise.';
+    ? 'Stop in the <b>curb lane</b> (bottom) at a glowing <b>PARA</b> sign to pick up a passenger, and at <b>BABA</b> to drop them off. Put your bumper on the green line for a <b>SAKTO</b> bonus.<br>Grab <b>barya</b> on the road, and swerve late past hazards for a <b>LUSOT</b> combo that multiplies it.<br><kbd>↑</kbd><kbd>↓</kbd> lanes · hold <kbd>→</kbd> gas · hold <kbd>Space</kbd> brake · <kbd>H</kbd> horn'
+    : `Reach the terminal before sunrise.${save.stars[n] ? ` Best: ${starText(save.stars[n])}` : ''}`;
   show('intro');
 }
 
@@ -62,12 +62,29 @@ function begin() {
   save.seenIntro = true;
   persist();
   show('play');
-  if (run.night === 1) say(null, 'Last trip of the night. The route is empty. Almost.', true);
+  if (run.night === 1) {
+    say(null, 'Last trip of the night. The route is empty. Almost.', true);
+    say(null, 'Hold → for gas. Grab the barya on the road.', true);
+    say(null, 'Swerve late past a hazard for LUSOT! Chain them to multiply your barya.', true);
+  }
 }
+
+const starText = (k) => '★'.repeat(k) + '☆'.repeat(3 - k);
 
 function endRun() {
   const r = run;
+  const best = save.stars[r.night] || 0;
   save = applyRun(save, r);
+  const stars = starsFor(r);
+  $('res-stars').textContent = starText(stars);
+  $('res-stars').classList.toggle('best', stars > best);
+  $('res-stats').textContent = [
+    stars > best && stars > 0 ? 'New best!' : null,
+    `Lusot ×${r.nearMisses}`,
+    `best combo ${r.bestCombo}`,
+    `Sakto stops ${r.sakto}`,
+    r.hits === 0 ? 'no bumps' : `${r.hits} bump${r.hits === 1 ? '' : 's'}`,
+  ].filter(Boolean).join(' · ');
   persist();
   const reason = r.done;
   const finalDelivered = r.night === 7 && r.delivered.includes('tatay');
@@ -148,10 +165,13 @@ function nextLine() {
 function hideSubtitle() { queue.length = 0; current = null; $('subtitle').hidden = true; }
 
 function onEvent(e) {
+  R.event(e, run);
   switch (e.type) {
-    case 'hit': A.hit(); R.hit(reduced()); if (run.hits === run.maxHits - 1) say(null, 'The engine coughs. One more bump and she\'s done.', true); break;
-    case 'pickup': A.ghost(); say(e.ghost, e.text); break;
-    case 'dropoff': A.coin(); say(e.ghost, `${e.text}  (+₱${e.coins})`); break;
+    case 'hit': A.hit(); if (run.hits === run.maxHits - 1) say(null, 'The engine coughs. One more bump and she\'s done.', true); break;
+    case 'pickup': A.ghost(); if (e.sakto) A.sakto(); say(e.ghost, e.text); break;
+    case 'dropoff': A.coin(); if (e.sakto) A.sakto(); say(e.ghost, `${e.text}  (+₱${e.coins})`); break;
+    case 'barya': A.barya(e.value); break;
+    case 'nearmiss': A.nearmiss(e.combo); break;
     case 'missed': A.miss(); say(null, e.kind === 'pickup' ? `${GHOSTS[e.ghost].name} waves as you pass. Maybe another night.` : `You passed ${GHOSTS[e.ghost].name}'s stop. They sigh and look out the window.`, true); break;
     case 'line': say(e.ghost, e.text, e.ghost === 'tatay' && run.night < 7); break;
     case 'horn': A.horn(); break;
@@ -172,7 +192,8 @@ function renderNights() {
     const have = frags.filter((f) => save.fragments.includes(f.id)).length;
     const locked = night.n > save.unlocked;
     b.disabled = locked;
-    b.innerHTML = `<span><b>Gabi ${night.n}</b> ${save.completed.includes(night.n) ? '<span class="done-mark">✓</span>' : ''}</span><span></span><small></small>`;
+    b.innerHTML = `<span><b>Gabi ${night.n}</b> ${save.completed.includes(night.n) ? '<span class="done-mark">✓</span>' : ''}<span class="stars"></span></span><span></span><small></small>`;
+    b.querySelector('.stars').textContent = locked ? '' : starText(save.stars[night.n] || 0);
     b.children[1].textContent = locked ? 'Locked' : `${night.title} · ${night.subtitle}`;
     b.children[2].textContent = locked ? 'Finish the night before' : `${have}/${frags.length} fragments`;
     b.onclick = () => startNight(night.n);
@@ -246,7 +267,7 @@ function pause() { if (mode === 'play') show('pause'); }
 document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
 
 // ---------- input ----------
-const input = { lane: 0, horn: false, brake: false };
+const input = { lane: 0, horn: false, brake: false, gas: false };
 let touchUI = matchMedia('(pointer: coarse)').matches;
 document.addEventListener('keydown', (e) => {
   const k = e.key;
@@ -257,11 +278,16 @@ document.addEventListener('keydown', (e) => {
     if (k === 'ArrowUp' || k === 'w' || k === 'W') input.lane = 1;
     else if (k === 'ArrowDown' || k === 's' || k === 'S') input.lane = -1;
     else if (k === ' ' || k === 'ArrowLeft' || k === 'Shift') input.brake = true;
+    else if (k === 'ArrowRight' || k === 'd' || k === 'D') input.gas = true;
     else if (k === 'h' || k === 'H') input.horn = true;
     else if (k === 'Escape' || k === 'p' || k === 'P') pause();
   } else if (mode === 'pause' && (k === 'Escape' || k === 'p' || k === 'P')) show('play');
 });
-document.addEventListener('keyup', (e) => { if ([' ', 'ArrowLeft', 'Shift'].includes(e.key)) input.brake = false; });
+document.addEventListener('keyup', (e) => {
+  if ([' ', 'ArrowLeft', 'Shift'].includes(e.key)) input.brake = false;
+  if (['ArrowRight', 'd', 'D'].includes(e.key)) input.gas = false;
+});
+window.addEventListener('blur', () => { input.brake = false; input.gas = false; });
 const hold = (id, on, off) => {
   const el = $(id);
   el.addEventListener('pointerdown', (e) => { e.preventDefault(); on(); });
@@ -271,6 +297,7 @@ hold('t-up', () => { input.lane = 1; });
 hold('t-down', () => { input.lane = -1; });
 hold('t-horn', () => { input.horn = true; });
 hold('t-brake', () => { input.brake = true; }, () => { input.brake = false; });
+hold('t-gas', () => { input.gas = true; }, () => { input.gas = false; });
 canvas.addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch' && !touchUI) { touchUI = true; if (mode === 'play') $('touch').hidden = false; } });
 
 // ---------- loop ----------
@@ -284,11 +311,11 @@ function frame(now) {
   while (acc >= 1 / 60) {
     acc -= 1 / 60;
     if (run && mode === 'play') {
-      const inp = AUTOPLAY ? autopilot(run) : { lane: input.lane, brake: input.brake, horn: input.horn };
+      const inp = AUTOPLAY ? autopilot(run) : { lane: input.lane, brake: input.brake, horn: input.horn, gas: input.gas };
       input.lane = 0; input.horn = false;
       for (const e of step(run, inp, 1 / 60)) onEvent(e);
     } else if (!run) {
-      step(attract, autopilot(attract), 1 / 60);
+      for (const e of step(attract, autopilot(attract), 1 / 60)) R.event(e, attract);
       if (attract.done) attract = newAttract();
     }
   }

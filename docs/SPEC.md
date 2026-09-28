@@ -66,3 +66,17 @@ You drive the last jeepney of the night down a Manila road. Your passengers are 
 ## Out of scope for v1
 
 Leaderboards, daily seeds, more routes, and a Tagalog-only mode.
+
+
+## v1.1 arcade layer (2026-09-28)
+
+Added after playtesting that v1 felt plain: the only verb was dodging.
+
+- **Gas:** hold → (D, or the GAS button) to raise the target speed to 1.4 × cruise. Floods still slow you, and braking wins over gas.
+- **Barya:** coin trails in lanes clear of hazards (±250 px) and away from stops, from a separate random stream so hazards never move. 1 coin each, times the combo multiplier.
+- **Lusot (near miss):** a hazard that was under 200 px ahead in your lane, then passed untouched, adds 1 to the combo and pays 1 × multiplier. Multiplier = min(5, 1 + ⌊combo / 2⌋). The combo fades after 6 s without another near miss, and a hit resets it.
+- **Sakto:** a stop that triggers with the front bumper within 30 px of the sign pays +₱3. The target is painted on the road, and a bumper guide shows when a stop is near.
+- **Horn:** dogs within horn range bolt across 2.5 × faster.
+- **Stars:** one for reaching the terminal, one for making every stop, one for no bumps. The best per night is saved.
+- **Economy:** upgrade costs doubled (brakes 60/120, bumper 80/160, horn 50/100) to absorb the barya income.
+- **Juice:** particles (sparks, exhaust, spray, wisps, glints), popups, shake, passenger bubbles, speed gauge, combo badge, next-stop arrow, checkpoint warning, music loop.

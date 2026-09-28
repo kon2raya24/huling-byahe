@@ -34,11 +34,11 @@ test('fragments never duplicate across replays', () => {
 });
 
 test('upgrades cost coins, cap at level 2, and refuse when broke', () => {
-  let s = { ...defaultSave(), coins: 100 };
+  let s = { ...defaultSave(), coins: 200 };
   let r = buyUpgrade(s, 'brakes');
-  assert.ok(r.ok); assert.equal(r.save.upgrades.brakes, 1); assert.equal(r.save.coins, 70);
+  assert.ok(r.ok); assert.equal(r.save.upgrades.brakes, 1); assert.equal(r.save.coins, 140);
   r = buyUpgrade(r.save, 'brakes');
-  assert.ok(r.ok); assert.equal(r.save.upgrades.brakes, 2); assert.equal(r.save.coins, 10);
+  assert.ok(r.ok); assert.equal(r.save.upgrades.brakes, 2); assert.equal(r.save.coins, 20);
   assert.equal(buyUpgrade(r.save, 'brakes').ok, false, 'maxed');
   assert.equal(buyUpgrade(r.save, 'bumper').ok, false, 'too poor');
 });
