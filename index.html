@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Huling Byahe: The Last Trip</title>
+<meta name="description" content="Drive the last jeepney of the night. Your passengers are ghosts, and each one has somewhere to be before sunrise. A browser arcade story game.">
+<meta property="og:title" content="Huling Byahe: The Last Trip">
+<meta property="og:description" content="Drive the last jeepney of the night. Your passengers are ghosts.">
+<meta name="theme-color" content="#070a1f">
+<style>
+:root { --bg: #070a1f; --ink: #e0def4; --muted: #908caa; --gold: #f6c177; --pink: #eb6f92; --teal: #9ccfd8; --panel: rgba(12, 12, 32, 0.9); color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+.wrap { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px 16px; gap: 10px; }
+.stage { position: relative; width: min(100%, 1100px, calc((100vh - 70px) * 16 / 9)); aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 50px rgba(0,0,0,.6), 0 0 0 1px rgba(246,193,119,.15); touch-action: none; user-select: none; -webkit-user-select: none; }
+canvas { display: block; width: 100%; height: 100%; }
+.screen { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: safe center; gap: 12px; padding: 4% 6%; background: linear-gradient(180deg, rgba(7,10,31,.55), rgba(7,10,31,.88)); text-align: center; overflow-y: auto; }
+.screen[hidden], .subtitle[hidden], .touch[hidden], .corner[hidden] { display: none !important; }
+.logo { font: 800 clamp(30px, 7vw, 72px)/1 Georgia, "Times New Roman", serif; letter-spacing: .06em; color: var(--gold); text-shadow: 0 0 18px rgba(246,193,119,.55), 0 0 42px rgba(235,111,146,.35); margin: 0; }
+.tag { color: var(--muted); margin: 0; font-size: clamp(13px, 1.8vw, 17px); }
+h2 { font: 700 clamp(20px, 3.2vw, 32px) Georgia, serif; margin: 0; color: var(--gold); }
+.row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+button { font: inherit; color: var(--ink); background: rgba(40, 36, 80, .85); border: 1.5px solid rgba(246,193,119,.45); border-radius: 10px; padding: 10px 18px; cursor: pointer; min-height: 44px; }
+button:hover { background: rgba(60, 54, 110, .95); }
+button:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
+button.primary { background: var(--gold); color: #1b1a2b; border-color: var(--gold); font-weight: 700; }
+button:disabled { opacity: .45; cursor: default; }
+.nights { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; width: min(100%, 760px); }
+.nights button { text-align: left; display: flex; flex-direction: column; gap: 2px; }
+.nights small, .muted { color: var(--muted); font-size: 13px; }
+.done-mark { color: var(--teal); }
+.book { width: min(100%, 780px); text-align: left; display: grid; gap: 12px; }
+.ghost { background: var(--panel); border-radius: 12px; padding: 10px 14px; border-left: 4px solid var(--c, var(--gold)); }
+.ghost h3 { margin: 0 0 6px; font: 700 16px Georgia, serif; color: var(--c); }
+.ghost p { margin: 4px 0; font-size: 14px; }
+.ghost p.missing { color: #5c5875; }
+.upgrades { display: grid; gap: 10px; width: min(100%, 560px); }
+.up { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--panel); border-radius: 12px; padding: 10px 14px; text-align: left; }
+.pips { letter-spacing: 3px; color: var(--gold); }
+.results ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; max-width: 640px; }
+.results li { background: var(--panel); border-radius: 10px; padding: 8px 12px; font-size: 14px; text-align: left; }
+.results li b { color: var(--c); }
+.new { color: var(--gold); font-size: 12px; margin-left: 6px; }
+.subtitle { position: absolute; left: 50%; bottom: 6%; transform: translateX(-50%); width: min(86%, 760px); background: rgba(8, 8, 24, .82); border-radius: 12px; padding: 10px 16px; font-size: clamp(13px, 1.9vw, 18px); text-align: center; pointer-events: none; border: 1px solid rgba(224,222,244,.12); }
+.subtitle b { display: block; font-size: .8em; letter-spacing: .08em; text-transform: uppercase; color: var(--c, var(--gold)); }
+.subtitle.narration span { font-style: italic; color: #c9c5e0; }
+.card { font: 400 clamp(18px, 3vw, 30px)/1.4 Georgia, serif; max-width: 760px; white-space: pre-line; }
+.keys { color: var(--muted); font-size: 13px; }
+kbd { background: #28244a; border-radius: 4px; padding: 1px 6px; border: 1px solid #3b3760; font: 12px ui-monospace, monospace; }
+.touch { position: absolute; inset: auto 0 0 0; display: flex; justify-content: space-between; align-items: flex-end; padding: 2%; pointer-events: none; }
+.touch .pad { display: flex; flex-direction: column; gap: 8px; pointer-events: auto; }
+.touch button { width: clamp(44px, 8vw, 64px); height: clamp(44px, 8vw, 64px); min-height: 0; border-radius: 50%; background: rgba(20,18,45,.28); border-color: rgba(246,193,119,.35); font-size: 18px; padding: 0; }
+.touch .brake { width: clamp(64px, 12vw, 96px); height: clamp(64px, 12vw, 96px); font-size: 13px; font-weight: 700; border-color: rgba(235,111,146,.6); }
+.touch .horn { width: clamp(44px, 7vw, 56px); height: clamp(44px, 7vw, 56px); font-size: 10px; }
+.corner { position: absolute; top: 11%; left: 1.7%; display: flex; gap: 6px; }
+.corner button { min-height: 34px; padding: 4px 10px; font-size: 13px; background: rgba(10,10,25,.6); }
+.help { color: var(--muted); font-size: 13px; margin: 0; text-align: center; }
+.help a { color: var(--teal); }
+.rotate { display: none; }
+@media (orientation: portrait) and (pointer: coarse) { .rotate { display: block; color: var(--gold); font-size: 13px; } }
+@media (max-height: 520px) { .help { display: none; } .wrap { padding: 4px 8px; } .stage { width: min(100%, calc((100vh - 8px) * 16 / 9)); } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="stage" id="stage">
+    <canvas id="game" width="960" height="540" role="img" aria-label="A jeepney driving through Manila at night"></canvas>
+    <div class="subtitle" id="subtitle" aria-live="polite" hidden><b id="sub-name"></b><span id="sub-text"></span></div>
+
+    <div class="corner" id="corner" hidden>
+      <button type="button" id="btn-pause" aria-label="Pause">❚❚</button>
+    </div>
+
+    <section class="screen" id="title">
+      <h1 class="logo">HULING BYAHE</h1>
+      <p class="tag">The Last Trip · a jeepney, a long night, and passengers who aren't quite here</p>
+      <div class="row">
+        <button type="button" class="primary" data-go="nights">Maglaro · Play</button>
+        <button type="button" data-go="logbook">Talaan · Logbook</button>
+        <button type="button" data-go="garage">Garahe · Garage</button>
+        <button type="button" id="btn-sound"></button>
+      </div>
+      <p class="keys"><kbd>↑</kbd><kbd>↓</kbd> change lanes · hold <kbd>Space</kbd> to brake · <kbd>H</kbd> horn · <kbd>Esc</kbd> pause</p>
+      <p class="rotate">Turn your phone sideways for a bigger road.</p>
+    </section>
+
+    <section class="screen" id="nights" hidden>
+      <h2>Pumili ng gabi · Choose a night</h2>
+      <div class="nights" id="night-list"></div>
+      <div class="row"><button type="button" data-go="title">Back</button></div>
+    </section>
+
+    <section class="screen" id="intro" hidden>
+      <p class="muted" id="intro-kicker"></p>
+      <h2 id="intro-title"></h2>
+      <p class="tag" id="intro-sub"></p>
+      <p class="keys" id="intro-help"></p>
+      <div class="row"><button type="button" class="primary" id="btn-begin">Simulan · Start</button></div>
+    </section>
+
+    <section class="screen" id="pause" hidden>
+      <h2>Hinto · Paused</h2>
+      <div class="row">
+        <button type="button" class="primary" id="btn-resume">Resume</button>
+        <button type="button" id="btn-restart">Restart night</button>
+        <button type="button" data-go="title" id="btn-quit">Quit to menu</button>
+      </div>
+    </section>
+
+    <section class="screen results" id="results" hidden>
+      <h2 id="res-title"></h2>
+      <p class="tag" id="res-sub"></p>
+      <ul id="res-list"></ul>
+      <p id="res-coins" class="muted"></p>
+      <div class="row" id="res-actions"></div>
+    </section>
+
+    <section class="screen" id="logbook" hidden>
+      <h2>Talaan · Logbook</h2>
+      <p class="muted" id="book-count"></p>
+      <div class="book" id="book"></div>
+      <div class="row"><button type="button" data-go="title">Back</button></div>
+    </section>
+
+    <section class="screen" id="garage" hidden>
+      <h2>Garahe · Garage</h2>
+      <p class="muted" id="garage-coins"></p>
+      <div class="upgrades" id="upgrades"></div>
+      <div class="row"><button type="button" data-go="back">Back</button></div>
+    </section>
+
+    <section class="screen" id="ending" hidden>
+      <p class="card" id="ending-card"></p>
+      <div class="row"><button type="button" class="primary" id="btn-ending-next">Next</button></div>
+    </section>
+
+    <div class="touch" id="touch" hidden>
+      <div class="pad">
+        <button type="button" id="t-up" aria-label="Lane up">▲</button>
+        <button type="button" id="t-down" aria-label="Lane down">▼</button>
+      </div>
+      <div class="pad" style="flex-direction: row; align-items: flex-end;">
+        <button type="button" class="horn" id="t-horn" aria-label="Horn">BUSINA</button>
+        <button type="button" class="brake" id="t-brake" aria-label="Brake">PRENO</button>
+      </div>
+    </div>
+  </div>
+  <p class="help">A browser story game by <a href="https://kon2raya.netlify.app" target="_blank" rel="noopener">Lemmuel Turaya</a> · the stories are fiction · <a href="https://github.com/kon2raya24/huling-byahe" target="_blank" rel="noopener">source</a></p>
+</main>
+<script type="module" src="src/main.mjs"></script>
+</body>
+</html>
