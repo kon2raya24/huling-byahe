@@ -80,3 +80,15 @@ Added after playtesting that v1 felt plain: the only verb was dodging.
 - **Stars:** one for reaching the terminal, one for making every stop, one for no bumps. The best per night is saved.
 - **Economy:** upgrade costs doubled (brakes 60/120, bumper 80/160, horn 50/100) to absorb the barya income.
 - **Juice:** particles (sparks, exhaust, spray, wisps, glints), popups, shake, passenger bubbles, speed gauge, combo badge, next-stop arrow, checkpoint warning, music loop.
+
+
+## v2 AAA 3D presentation (2026-10-01)
+
+The same game (world.mjs is untouched; 46 tests) with a real-time 3D view in three.js.
+- **World:** the barangay at night along an endless street. Frontages sit in 7 m slots, posts every 26 m, and the LRT and city lie behind. Each night has a mood: sky, fog density, rain, mist, wetness, lamp colour, a street mix and a grade. Dawn rises ahead in the last 45 minutes.
+- **Camera:** a three-quarter view from the curb side. It looks further ahead on the gas and eases in near a stop. On a tall phone it is higher and steeper. There are cinematic shots for the intro, title, results, garage and ending, plus shake, a punch on LUSOT and SAKTO, and a swing while a ghost boards. Calm mode turns off shake, flashes, swings and the letterbox bars.
+- **Characters:** a procedural hero jeepney and fresnel ghosts with identities, plus procedural dogs, tricycles and a tanod.
+- **Readability:** the speed gauge marks the stop speed (45), the checkpoint speed (120) and cruise. Near a stop it shows the bumper's distance to the sakto line, to a tenth of a metre, with a hint. The sakto band and line are painted on the road, with a light wall at the line.
+- **Feel:** a hit freezes the sim for 90 ms (hit-stop). This changes no rules.
+- **Settings** (saved in `settings`; older saves migrate): graphics, music, effects, sound and calm.
+- **Fallback:** the 2D renderer if WebGL fails. No service worker: the game had none before, and none was added.

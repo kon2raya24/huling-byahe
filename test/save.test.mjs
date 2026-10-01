@@ -50,3 +50,14 @@ test('saves round-trip; junk and other versions give a fresh save', () => {
   assert.deepEqual(deserialize(JSON.stringify({ ...s, v: 99 })), defaultSave());
   assert.deepEqual(deserialize(null), defaultSave());
 });
+
+test('a save from before the settings screen loads with the default settings, and settings survive a round trip', async () => {
+  const { deserialize, serialize, defaultSave, defaultSettings } = await import('../src/save.mjs');
+  const old = { ...defaultSave() }; delete old.settings; old.coins = 42;
+  const s = deserialize(JSON.stringify(old));
+  assert.equal(s.coins, 42);
+  assert.deepEqual(s.settings, defaultSettings());
+  s.settings.gfx = 1; s.settings.calm = true; s.settings.music = 0.3;
+  const back = deserialize(serialize(s));
+  assert.equal(back.settings.gfx, 1); assert.equal(back.settings.calm, true); assert.equal(back.settings.music, 0.3); assert.equal(back.settings.sfx, 1);
+});
